@@ -1,0 +1,5 @@
+Page,Classification,Confidence,Application Numbers,Applicant Names
+1,Planning Charges Register,0.3521,02/80/1609; 02/81/1237,"Mr. & Mra. J.M Doe Connell; My First Company Ltd.,; Mr. & Mrs.J.M Doe"
+2,Decision Notice for Planning Permission,0.5719,P/00/0759; JK/2000/FS/1,Mr M Dale
+3,Decision Notice for Conditional Planning Permission,0.4223,None found,None identified
+4,Decision Notice for Approval of Details,0.4774,P/98/0964; P/96/0900,Mrs AM Stephen

@@ -40,7 +40,6 @@ def load_ner_model():
     return nlp
 
 
-
 def extract_application_numbers(text):
     """
     Extract planning application numbers from text using regex patterns.
@@ -54,32 +53,23 @@ def extract_application_numbers(text):
     Returns:
         list: A list of unique application numbers found.
     """
-    # Define patterns for known application number formats
     patterns = [
-        # Format: Letter/YY/NNNN (e.g. P/00/0759, P/98/0964)
         r'[A-Z]/\d{2}/\d{3,5}',
-
-        # Format: NN/YY/NNNN (e.g. 02/80/1609, 02/81/1237)
         r'\d{2}/\d{2}/\d{3,5}',
-
-        # Format: Letters/YYYY/Letters/N (e.g. JK/2000/FS/1)
         r'[A-Z]{2}/\d{4}/[A-Z]{1,3}/\d+',
     ]
 
     all_matches = []
-
     for pattern in patterns:
         matches = re.findall(pattern, text)
         all_matches.extend(matches)
 
-    # Filter out dates (DD/MM/YYYY or DD/MM/YY format)
     filtered = []
     for match in all_matches:
         if is_likely_date(match):
             continue
         filtered.append(match)
 
-    # Remove duplicates while preserving order
     seen = set()
     unique = []
     for number in filtered:
@@ -90,15 +80,10 @@ def extract_application_numbers(text):
     return unique
 
 
-
 def is_likely_date(text):
     """
     Check if a string matching an application number pattern is
     actually a date.
-
-    Dates in DD/MM/YYYY or DD/MM/YY format can match the NN/YY/NNNN
-    application number pattern. This function identifies and filters
-    them out.
 
     Args:
         text (str): A potential application number string.
@@ -106,17 +91,13 @@ def is_likely_date(text):
     Returns:
         bool: True if the string is likely a date, False otherwise.
     """
-    # Pattern: DD/MM/YYYY where DD is 01-31 and MM is 01-12
     date_pattern_long = r'^(0[1-9]|[12]\d|3[01])/(0[1-9]|1[0-2])/\d{4}$'
-
-    # Pattern: DD/MM/YY where DD is 01-31 and MM is 01-12
     date_pattern_short = r'^(0[1-9]|[12]\d|3[01])/(0[1-9]|1[0-2])/\d{2}$'
 
     if re.match(date_pattern_long, text) or re.match(date_pattern_short, text):
         return True
 
     return False
-
 
 
 def extract_applicant_names(text, nlp):
@@ -138,10 +119,8 @@ def extract_applicant_names(text, nlp):
               - 'type': the entity type (PERSON or ORG)
               - 'context': how the name was identified
     """
-    # Run NER on the text
     doc = nlp(text)
 
-    # Collect all PERSON and ORG entities
     entities = []
     for ent in doc.ents:
         if ent.label_ in ["PERSON", "ORG"]:
@@ -152,7 +131,6 @@ def extract_applicant_names(text, nlp):
                 'end': ent.end_char
             })
 
-    # Define keywords that indicate an applicant name nearby
     applicant_keywords = [
         "applicant",
         "approval granted to",
@@ -162,7 +140,6 @@ def extract_applicant_names(text, nlp):
         "submitted by",
     ]
 
-    # Define keywords that indicate a non-applicant (officer, signatory)
     non_applicant_keywords = [
         "director of planning",
         "signed",
@@ -174,43 +151,36 @@ def extract_applicant_names(text, nlp):
         "council of",
     ]
 
-    # Score each entity based on context
     scored_entities = []
 
     for entity in entities:
         name = entity['name']
         entity_pos = entity['start']
 
-        # Skip very short names (likely OCR noise)
         if len(name) < 3:
             continue
 
-        # Check surrounding text for context (300 chars before the entity)
         context_start = max(0, entity_pos - 300)
         surrounding_text = text[context_start:entity_pos].lower()
 
-        # Check if near an applicant keyword
         near_applicant_keyword = False
         for keyword in applicant_keywords:
             if keyword in surrounding_text:
                 near_applicant_keyword = True
                 break
 
-        # Check if near a non-applicant keyword
         near_non_applicant = False
         for keyword in non_applicant_keywords:
             if keyword in surrounding_text:
                 near_non_applicant = True
                 break
 
-        # Also check text immediately after the entity for non-applicant signals
         context_after = text[entity['end']:entity['end'] + 200].lower()
         for keyword in non_applicant_keywords:
             if keyword in context_after:
                 near_non_applicant = True
                 break
 
-        # Determine context label
         if near_applicant_keyword and not near_non_applicant:
             context = "Near applicant keyword"
         elif near_non_applicant:
@@ -227,14 +197,10 @@ def extract_applicant_names(text, nlp):
     return scored_entities
 
 
-
 def clean_extracted_names(entities):
     """
     Post-process extracted name entities to remove obvious
     false positives caused by OCR noise or NER errors.
-
-    Filters out names that are clearly organisations, locations,
-    or government bodies rather than applicant names.
 
     Args:
         entities (list): List of entity dictionaries from
@@ -243,7 +209,6 @@ def clean_extracted_names(entities):
     Returns:
         list: Filtered list of entity dictionaries.
     """
-    # Terms that indicate a name is not an applicant
     exclusion_terms = [
         "council",
         "borough",
@@ -258,9 +223,8 @@ def clean_extracted_names(entities):
         "department",
         "state",
         "stat",
-        "connell",
-        "the local",
-        "the north",
+        "loval",
+        "local",
     ]
 
     cleaned = []
@@ -268,40 +232,221 @@ def clean_extracted_names(entities):
     for entity in entities:
         name_lower = entity['name'].lower().strip()
 
-        # Skip names that are too short
         if len(name_lower) < 3:
             continue
 
-        # Skip names that are just OCR noise (no real letters)
         real_letters = re.findall(r'[a-zA-Z]{2,}', entity['name'])
         if len(real_letters) == 0:
             continue
 
-        # Skip names that match exclusion terms
+        name_normalised = name_lower.replace('\n', ' ')
         is_excluded = False
         for term in exclusion_terms:
-            if name_lower == term or name_lower.startswith(term + " "):
+            if (name_normalised == term or
+                name_normalised.startswith(term + " ") or
+                term in name_normalised):
                 is_excluded = True
                 break
         if is_excluded:
             continue
 
-        # Skip entities that are clearly place names used as locations
-        # (single-word names that are common place indicators)
-        place_terms = ["thornton", "annexe", "centre", "house", "sphtey"]
+        place_terms = ["thornton", "annexe", "centre", "house"]
         if name_lower in place_terms:
             continue
-        
 
-        # Skip entities containing ellipsis or OCR fragment markers
         if "..." in entity['name'] or ".." in entity['name']:
             continue
-
 
         cleaned.append(entity)
 
     return cleaned
 
+
+def deduplicate_names(entities):
+    """
+    Remove duplicate and near-duplicate name entities.
+
+    Handles cases where the same applicant appears multiple times
+    due to repeated mentions in the document or slight OCR
+    variations of the same name.
+
+    Args:
+        entities (list): List of entity dictionaries.
+
+    Returns:
+        list: Deduplicated list of entity dictionaries.
+    """
+    if not entities:
+        return entities
+
+    # Sort entities so that longer (more complete) names come first
+    sorted_entities = sorted(entities, key=lambda e: len(e['name']), reverse=True)
+
+    unique = []
+    seen_normalised = []
+
+    for entity in sorted_entities:
+        name = entity['name'].lower().strip()
+        name = re.sub(r'[^a-z0-9\s&]', '', name)
+        name = re.sub(r'\s+', ' ', name).strip()
+
+        if len(name) < 3:
+            continue
+
+        # Extract the key name words (ignoring titles like mr, mrs, mra)
+        titles = {'mr', 'mrs', 'mra', 'ms', 'dr', 'miss', 'sir', 'virs'}
+        name_words = [w for w in name.split() if w not in titles and w != '&']
+
+        is_duplicate = False
+        for seen_name, seen_words in seen_normalised:
+            # Exact match
+            if name == seen_name:
+                is_duplicate = True
+                break
+
+            # Check if the key name words overlap significantly
+            if name_words and seen_words:
+                shared = set(name_words) & set(seen_words)
+                if len(shared) >= len(min(name_words, seen_words, key=len)):
+                    is_duplicate = True
+                    break
+
+        if not is_duplicate:
+            unique.append(entity)
+            seen_normalised.append((name, name_words))
+
+    return unique
+
+def extract_names_by_pattern(text):
+    """
+    Extract applicant names using regex patterns that target
+    known text structures in planning documents.
+
+    This supplements NER by catching names that appear in
+    predictable positions relative to keywords, even when
+    OCR noise prevents NER from recognising them.
+
+    Args:
+        text (str): The extracted text from a single page.
+
+    Returns:
+        list: A list of dictionaries containing extracted names.
+    """
+    names = []
+
+    # Strategy 1: Look for lines containing "Applicant" keyword
+    # then capture the name from the following line(s).
+    lines = text.split('\n')
+
+    for i, line in enumerate(lines):
+        line_lower = line.lower().strip()
+
+        is_applicant_line = False
+        applicant_fragments = [
+            "applicant",
+            "applivcarnt",
+            "npl icant",
+            "ppl icant",
+        ]
+
+        for fragment in applicant_fragments:
+            if fragment in line_lower:
+                is_applicant_line = True
+                break
+
+        if "application" in line_lower:
+            is_applicant_line = False
+
+        if is_applicant_line:
+            for j in range(i + 1, min(i + 4, len(lines))):
+                candidate = lines[j].strip()
+
+                if not candidate:
+                    continue
+
+                skip_terms = [
+                    "agent", "part ", "date of", "particulars",
+                    "application number", "proposal", "location",
+                    "town and country", "planning act",
+                    "order", "procedure", "as named",
+                    "subject to", "compliance", "condition",
+                    "approval", "granted", "permission",
+                    "pursuance", "referred", "development",
+                    "signature", "registrar", "received",
+                    "council", "borough", "reverse",
+                ]
+                should_skip = False
+                for term in skip_terms:
+                    if term in candidate.lower():
+                        should_skip = True
+                        break
+                if should_skip:
+                    break
+
+                real_words = re.findall(r'[a-zA-Z]{2,}', candidate)
+                if len(real_words) < 1:
+                    continue
+
+                if len(candidate) > 80:
+                    continue
+
+                cleaned_name = candidate.rstrip(',').strip()
+                cleaned_name = re.sub(r'^Virs\b', 'Mrs', cleaned_name)
+                cleaned_name = re.sub(r'^Mra\.?\b', 'Mrs', cleaned_name)
+
+                names.append({
+                    'name': cleaned_name,
+                    'type': 'PERSON/ORG',
+                    'context': 'Regex pattern match after Applicant label'
+                })
+                break
+
+    # Strategy 2: Capture names after "approval granted to"
+    # This is outside the Strategy 1 loop
+    granted_pattern = r'approval granted to\s+(.+)'
+    for match in re.finditer(granted_pattern, text, re.IGNORECASE):
+        captured = match.group(1).strip()
+
+        stop_words = ['dated', 'under the', 'pursuant', '\n',
+                      'council', 'office']
+        for stop_word in stop_words:
+            pos = captured.lower().find(stop_word)
+            if pos != -1:
+                captured = captured[:pos].strip()
+
+        captured = captured.rstrip('.,;"\' ')
+        captured = re.sub(r'\s*"".*$', '', captured)
+        captured = re.sub(r'\s*".*$', '', captured)
+
+        if len(captured) < 4 or len(captured) > 60:
+            continue
+
+        skip_terms = ["provision", "condition", "planning", "council",
+                      "borough", "section", "act ", "regulation",
+                      "signature", "registrar", "date"]
+        should_skip = False
+        for term in skip_terms:
+            if term in captured.lower():
+                should_skip = True
+                break
+        if should_skip:
+            continue
+
+        names.append({
+            'name': captured,
+            'type': 'PERSON/ORG',
+            'context': 'Regex pattern match after granted to'
+        })
+
+    # Remove duplicates
+    seen = set()
+    unique = []
+    for name in names:
+        if name['name'] not in seen:
+            seen.add(name['name'])
+            unique.append(name)
+
+    return unique
 
 
 def extract_entities_all_pages(results):
@@ -319,7 +464,6 @@ def extract_entities_all_pages(results):
         dict: The results dictionary with entity data added to
               each page entry.
     """
-    # Load the NER model once
     nlp = load_ner_model()
 
     print(f"\nExtracting entities from {len(results)} pages...\n")
@@ -329,7 +473,6 @@ def extract_entities_all_pages(results):
 
         print(f"Processing page {page_num}...")
 
-        # Extract application numbers
         app_numbers = extract_application_numbers(text)
         data['application_numbers'] = app_numbers
 
@@ -338,15 +481,33 @@ def extract_entities_all_pages(results):
         else:
             print(f"  Application numbers: None found")
 
-        # Extract applicant names
+        # Extract applicant names using NER
         name_entities = extract_applicant_names(text, nlp)
         name_entities = clean_extracted_names(name_entities)
+
+        # Supplement with regex-based pattern extraction
+        pattern_names = extract_names_by_pattern(text)
+
+        # Merge pattern results with NER results, avoiding duplicates
+        existing_names = {e['name'].lower() for e in name_entities}
+        for pname in pattern_names:
+            if pname['name'].lower() not in existing_names:
+                name_entities.append(pname)
+                existing_names.add(pname['name'].lower())
+
+        # Deduplicate near-duplicate names
+        name_entities = deduplicate_names(name_entities)
+
         data['name_entities'] = name_entities
 
         # Separate likely applicants from other entities
         likely_applicants = [
             e for e in name_entities
-            if e['context'] == "Near applicant keyword"
+            if e['context'] in [
+                "Near applicant keyword",
+                "Regex pattern match after Applicant label",
+                "Regex pattern match after granted to",
+            ]
         ]
         other_names = [
             e for e in name_entities
@@ -378,7 +539,6 @@ def extract_entities_all_pages(results):
     return results
 
 
-
 if __name__ == "__main__":
     import sys
     import os
@@ -386,17 +546,13 @@ if __name__ == "__main__":
 
     from src.text_extraction import extract_text_from_pdf
 
-    # Define the path to the PDF file
     pdf_path = "data/anonymised 1.pdf"
 
-    # Run text extraction
     print("Running text extraction...")
     results = extract_text_from_pdf(pdf_path)
 
-    # Run entity extraction
     results = extract_entities_all_pages(results)
 
-    # Print detailed results
     print("\n" + "=" * 60)
     print("ENTITY EXTRACTION RESULTS")
     print("=" * 60)
