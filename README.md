@@ -90,7 +90,7 @@ python -m spacy download en_core_web_trf
 
 ## Usage
 
-Place your PDF file in the `data/` folder, then run:
+Place your PDF file in the [data/](data/) folder, then run:
 
 ```
 python run.py
@@ -101,14 +101,14 @@ The pipeline will:
 1. Extract text from each page using OCR where needed
 2. Classify each page by document type
 3. Extract application numbers and applicant names
-4. Save results to the `outputs/` folder
+4. Save results to the [outputs/](outputs/) folder
 5. Print a summary to the terminal
 
 **Note:** The first run will download the Hugging Face classification model (~1.6 GB), which may take several minutes. Subsequent runs use the cached model.
 
 ## Output
 
-The pipeline produces two output files in the `outputs/` folder:
+The pipeline produces two output files in the [outputs/](outputs/) folder:
 
 - **classification_results.csv** — A structured table with one row per page showing the page number, classification category, confidence score, application numbers found, and applicant names found.
 
@@ -121,4 +121,4 @@ The pipeline produces two output files in the `outputs/` folder:
 - **Small sample size** (4 pages) limits statistical validation. Additional page types may exist in larger document sets that are not represented in the current category definitions.
 - **Name-location ambiguity** in OCR text can cause trailing location words to be captured alongside applicant names when no clear delimiter is present.
 
-For a detailed discussion of EDA findings, limitations, and alternative methods, see the analysis report in `reports/analysis-report.pdf`.
+For a detailed discussion of EDA findings, limitations, and alternative methods, see the analysis report in [analysis report](reports/analysis-report.pdf).
