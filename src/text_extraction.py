@@ -192,7 +192,7 @@ def extract_text_from_pdf(pdf_path):
 
 if __name__ == "__main__":
     # Define the path to the PDF file
-    pdf_path = "data/anonymised 1.pdf"
+    pdf_path = "data/anonymised-1.pdf"
 
     # Run the extraction pipeline
     results = extract_text_from_pdf(pdf_path)

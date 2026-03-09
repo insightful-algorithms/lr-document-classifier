@@ -22,7 +22,7 @@ An NLP-only approach was chosen because all three tasks (classification, number 
 lr-document-classifier/
 │
 ├── data/                      # Input PDF files
-│   └── anonymised 1.pdf       # Planning decision notices PDF
+│   └── anonymised-1.pdf       # Planning decision notices PDF
 │
 ├── src/                       # Source code modules
 │   ├── text_extraction.py     # PDF text extraction with OCR fallback

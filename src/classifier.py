@@ -143,7 +143,7 @@ if __name__ == "__main__":
     from src.text_extraction import extract_text_from_pdf
 
     # Define the path to the PDF file
-    pdf_path = "data/anonymised 1.pdf"
+    pdf_path = "data/anonymised-1.pdf"
 
     # Run text extraction
     print("Running text extraction...")

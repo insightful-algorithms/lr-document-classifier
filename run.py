@@ -174,7 +174,7 @@ def main():
     print("=" * 60)
 
     # Define the input PDF path
-    pdf_path = "data/anonymised 1.pdf"
+    pdf_path = "data/anonymised-1.pdf"
 
     # Check that the input file exists
     if not os.path.exists(pdf_path):

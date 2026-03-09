@@ -546,7 +546,7 @@ if __name__ == "__main__":
 
     from src.text_extraction import extract_text_from_pdf
 
-    pdf_path = "data/anonymised 1.pdf"
+    pdf_path = "data/anonymised-1.pdf"
 
     print("Running text extraction...")
     results = extract_text_from_pdf(pdf_path)
